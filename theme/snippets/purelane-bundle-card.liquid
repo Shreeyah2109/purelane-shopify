@@ -65,7 +65,8 @@
   # Determine Per Item Note:
   # 1. dynamic division if bundle_product exists and qty_num > 0
   # 2. merchant fallback per_item_note
-  # 3. omit otherwise (do not invent hardcoded per-product text)
+  # 3. dynamic division from fallback price if provided
+  # 4. omit otherwise
   assign per_item_note = ''
   if bundle_product != blank and qty_num > 0
     assign per_item_cents = bundle_product.price | divided_by: qty_num
@@ -73,6 +74,12 @@
     assign per_item_note = 'Flat ' | append: per_item_formatted | append: ' per product'
   elsif block.settings.per_item_note != blank
     assign per_item_note = block.settings.per_item_note
+  elsif tier_price != blank and qty_num > 0
+    assign clean_p = tier_price | remove: '₹' | remove: ',' | remove: ' ' | strip | plus: 0
+    if clean_p > 0
+      assign clean_calc = clean_p | divided_by: qty_num
+      assign per_item_note = 'Flat ₹' | append: clean_calc | append: ' per product'
+    endif
   endif
 
   # CTA destination: 1. merchant cta_link override, 2. bundle_product.url, 3. fallback #shop

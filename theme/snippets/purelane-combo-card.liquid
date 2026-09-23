@@ -85,6 +85,13 @@
     assign savings_tag = 'Save ' | append: savings_num
   elsif bundle_product == blank and block.settings.savings_tag != blank
     assign savings_tag = block.settings.savings_tag
+  elsif combo_compare_price != blank and combo_price != blank
+    assign clean_compare = combo_compare_price | remove: '₹' | remove: ',' | remove: ' ' | strip | plus: 0
+    assign clean_price = combo_price | remove: '₹' | remove: ',' | remove: ' ' | strip | plus: 0
+    if clean_compare > clean_price
+      assign calc_savings = clean_compare | minus: clean_price
+      assign savings_tag = 'Save ₹' | append: calc_savings
+    endif
   endif
 
   # Top savings badge: explicit merchant setting or dynamic 'You save ₹...'
