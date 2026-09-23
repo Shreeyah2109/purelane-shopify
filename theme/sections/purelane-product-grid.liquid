@@ -1,12 +1,15 @@
 {{ 'purelane.css' | asset_url | stylesheet_tag }}
 
 {%- liquid
-  assign target_collection = section.settings.collection
-  if target_collection != blank and target_collection.products_count > 0
+  assign col_handle = section.settings.collection | default: 'all'
+  assign target_collection = collections[col_handle]
+  if target_collection.products != blank and target_collection.products.size > 0
     assign products = target_collection.products
-  elsif collections['all'] != blank and collections['all'].products_count > 0
+  elsif section.settings.collection.products != blank and section.settings.collection.products.size > 0
+    assign products = section.settings.collection.products
+  elsif collections['all'].products != blank and collections['all'].products.size > 0
     assign products = collections['all'].products
-  else
+  elsif collections.all.products != blank and collections.all.products.size > 0
     assign products = collections.all.products
   endif
 -%}

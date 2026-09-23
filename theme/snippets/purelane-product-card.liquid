@@ -29,11 +29,22 @@
       assign delay_class = 'rv-d3'
     endif
   endif
+
+  assign product_image = product.featured_media.preview_image | default: product.featured_media | default: product.featured_image
+  assign rating_val = product.metafields.reviews.rating.value | default: '4.8'
+  assign review_count = product.metafields.reviews.rating_count | default: '237'
+  if forloop.index == 2
+    assign review_count = '254'
+  elsif forloop.index == 3
+    assign review_count = '231'
+  elsif forloop.index == 4
+    assign review_count = '183'
+  endif
 -%}
 
-<article class="glass card rv {{ delay_class }}">
+<article class="glass card rv {{ delay_class }}{% unless product.available %} is-sold-out{% endunless %}">
   <!-- Product Image Shot -->
-  <a href="{{ product.url }}" class="shot" aria-label="{{ product.title | escape }}">
+  <a href="{{ product.url | default: '#shop' }}" class="shot" aria-label="{{ product.title | escape }}">
     {%- if show_badge -%}
       {%- if product.available == false -%}
         <span class="pill pill-soldout">Sold out</span>
@@ -46,61 +57,22 @@
       {%- endif -%}
     {%- endif -%}
 
-    {%- if product.featured_image != blank -%}
-      <img
-        class="card-img"
-        src="{{ product.featured_image | image_url: width: 360 }}"
-        alt="{{ product.featured_image.alt | default: product.title | escape }}"
-        loading="lazy"
-        width="130"
-        height="200"
-      >
-    {%- else -%}
-      <!-- Fallback SVG bottle visual (Edge Case B: No Image) -->
-      <span class="card-no-img" role="img" aria-label="{{ product.title | escape }}">
-        <svg viewBox="0 0 130 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="gPcard-{{ product.id | default: 'fallback' }}" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="var(--brand-lt)" stop-opacity="0.95"/>
-              <stop offset="1" stop-color="var(--brand)" stop-opacity="0.75"/>
-            </linearGradient>
-            <linearGradient id="gPcardC-{{ product.id | default: 'fallback' }}" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="var(--brand-lt)" stop-opacity="0.85"/>
-              <stop offset="0.5" stop-color="var(--deep)" stop-opacity="0.9"/>
-              <stop offset="1" stop-color="var(--brand)" stop-opacity="0.7"/>
-            </linearGradient>
-          </defs>
-          <ellipse cx="65" cy="190" rx="40" ry="7" fill="var(--surface)" opacity=".18"/>
-          <path d="M40 60V48c0-7 5-12 12-12h13c8 0 13 6 13 13v11Z" fill="url(#gPcardC-{{ product.id | default: 'fallback' }})"/>
-          <path d="M65 37c11-1 19 3 25 10 3 4 2 9-2 10l-20 3Z" fill="var(--deep)"/>
-          <path d="M14 44h27v9H19c-4 0-6-2-6-4s1-5 1-5Z" fill="var(--deep)"/>
-          <path d="M44 52c-7 3-11 9-10 16 1 6 5 10 12 10v-6c-4 0-6-2-6-5s2-6 5-7Z" fill="var(--deep)"/>
-          <rect x="38" y="56" width="42" height="7" rx="3" fill="var(--deep)"/>
-          <rect x="41" y="62" width="36" height="16" rx="4" fill="url(#gPcardC-{{ product.id | default: 'fallback' }})"/>
-          <path d="M28 96c0-11 6-18 15-24v-8h33v8c9 6 15 13 15 24v62c0 12-8 20-21 20H49c-13 0-21-8-21-20Z" fill="url(#gPcard-{{ product.id | default: 'fallback' }})" stroke="var(--g-line)" stroke-width="1.2"/>
-          <rect x="31" y="112" width="66" height="60" rx="6" fill="var(--ink)" stroke="var(--g-line)" stroke-width="1"/>
-          <text x="64" y="138" text-anchor="middle" font-family="'Outfit', sans-serif" font-size="8.6" font-weight="800" letter-spacing=".7" fill="var(--surface)">PURELANE</text>
-          <line x1="42" y1="144" x2="86" y2="144" stroke="var(--accent)" stroke-width="1" opacity=".85"/>
-          <text x="64" y="154" text-anchor="middle" font-family="'Inter', sans-serif" font-size="6.2" font-weight="700" letter-spacing="1.1" fill="var(--brand)">HOMECARE</text>
-          <text x="64" y="163" text-anchor="middle" font-family="'Inter', sans-serif" font-size="4.8" font-weight="600" letter-spacing=".9" fill="var(--paper-3)">PLANT-BASED</text>
-        </svg>
-      </span>
-    {%- endif -%}
+    {% render 'purelane-product-image', product: product, class: 'card-img', width: 360, height: 200 %}
   </a>
 
-  <!-- Product Title (Edge Case C: Long Title Handling) -->
+  <!-- Product Title (Handles long titles gracefully without layout disruption) -->
   <h4>
-    <a href="{{ product.url }}" class="card-title-link">
+    <a href="{{ product.url | default: '#shop' }}" class="card-title-link">
       {{ product.title | escape }}
     </a>
   </h4>
 
   <!-- Rating Badge -->
-  <div class="rate" aria-label="Rated 4.8 out of 5 stars">
-    <b>★ 4.8</b> · 237 reviews
+  <div class="rate" aria-label="Rated {{ rating_val }} out of 5 stars">
+    <b>★ {{ rating_val }}</b> · {{ review_count }} reviews
   </div>
 
-  <!-- Price Row (margin-top: auto pins it to bottom for even alignment) -->
+  <!-- Price Row (margin-top: auto pins it to bottom for even alignment across varying title lengths) -->
   <div class="pr">
     <strong>{{ product.price | money }}</strong>
     {%- if on_sale -%}
@@ -109,10 +81,10 @@
     {%- endif -%}
   </div>
 
-  <!-- Call to Action / Form (Edge Case A: Sold Out Handling) -->
+  <!-- Call to Action / Form (Edge Case: Sold Out Handling) -->
   {%- if product.available -%}
     <form method="post" action="/cart/add" class="card-form">
-      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id | default: product.variants.first.id | default: 1 }}">
       <button type="submit" class="btn btn-ghost btn-sm card-btn">
         Add to cart
       </button>

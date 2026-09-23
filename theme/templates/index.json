@@ -344,8 +344,8 @@
   "order": [
     "purelane_hero",
     "purelane_reviews",
-    "purelane_product_grid",
     "purelane_combos",
-    "purelane_bundles"
+    "purelane_bundles",
+    "purelane_product_grid"
   ]
 }

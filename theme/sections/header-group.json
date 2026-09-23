@@ -4,46 +4,45 @@
   "sections": {
     "announcement-bar": {
       "type": "announcement-bar",
-      "settings": {
-        "color_scheme": "scheme-1",
-        "show_line_separator": true,
-        "show_social": false,
-        "auto_rotate": false,
-        "change_slides_speed": 5,
-        "enable_country_selector": false,
-        "enable_language_selector": false
-      },
+      "settings": {},
       "blocks": {
-        "announcement-bar-0": {
+        "announcement-1": {
           "type": "announcement",
           "settings": {
-            "text": "Welcome to our store",
-            "text_alignment": "center",
-            "color_scheme": "scheme-1",
-            "link": ""
+            "text": "Free shipping <b>on every bundle across India</b>"
+          }
+        },
+        "announcement-2": {
+          "type": "announcement",
+          "settings": {
+            "text": "100% plant-based <b>and non-toxic</b>"
+          }
+        },
+        "announcement-3": {
+          "type": "announcement",
+          "settings": {
+            "text": "Loved by <b>30,000+ happy homes</b>"
+          }
+        },
+        "announcement-4": {
+          "type": "announcement",
+          "settings": {
+            "text": "Buy 3 <b>at flat ₹499</b>"
           }
         }
       },
       "block_order": [
-        "announcement-bar-0"
+        "announcement-1",
+        "announcement-2",
+        "announcement-3",
+        "announcement-4"
       ]
     },
     "header": {
       "type": "header",
       "settings": {
-        "color_scheme": "scheme-1",
-        "menu_color_scheme": "scheme-1",
-        "logo_position": "middle-left",
         "menu": "main-menu",
-        "menu_type_desktop": "dropdown",
-        "sticky_header_type": "on-scroll-up",
-        "show_line_separator": true,
-        "enable_country_selector": true,
-        "enable_language_selector": true,
-        "mobile_logo_position": "center",
-        "margin_bottom": 0,
-        "padding_top": 20,
-        "padding_bottom": 20
+        "tagline": "Clean, simply"
       }
     }
   },

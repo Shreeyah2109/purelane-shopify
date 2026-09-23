@@ -1,0 +1,52 @@
+{%- comment -%}
+  Renders a Purelane product image with responsive sizing and intentional fallback state.
+  Accepts:
+  - product: {Object} Shopify Product object (optional if image provided directly)
+  - image: {Object} Shopify Image object (optional)
+  - class: {String} Extra CSS class names (optional)
+  - loading: {String} 'lazy' or 'eager' (default: 'lazy')
+  - fetchpriority: {String} 'high', 'low', 'auto' (optional)
+  - width: {Number} Base width (default: 360)
+  - height: {Number} Base height (default: 200)
+  - alt: {String} Alt text override (optional)
+
+  Usage:
+  {% render 'purelane-product-image', product: product, class: 'card-img', width: 360, height: 200 %}
+{%- endcomment -%}
+
+{%- liquid
+  assign target_image = image
+  if target_image == blank and product != blank
+    assign target_image = product.featured_media.preview_image | default: product.featured_media | default: product.featured_image
+  endif
+
+  assign img_alt = alt | default: target_image.alt | default: product.title | default: 'Purelane plant-based homecare' | escape
+  assign img_loading = loading | default: 'lazy'
+  assign img_width = width | default: 360
+  assign img_height = height | default: 200
+-%}
+
+{%- if target_image != blank -%}
+  <img
+    class="{{ class | default: 'card-img' }}"
+    src="{{ target_image | image_url: width: img_width }}"
+    srcset="{{ target_image | image_url: width: 180 }} 180w, {{ target_image | image_url: width: 360 }} 360w, {{ target_image | image_url: width: 540 }} 540w, {{ target_image | image_url: width: 720 }} 720w"
+    sizes="(max-width: 760px) 180px, 360px"
+    alt="{{ img_alt }}"
+    loading="{{ img_loading }}"
+    {% if fetchpriority %}fetchpriority="{{ fetchpriority }}"{% endif %}
+    width="{{ img_width }}"
+    height="{{ img_height }}"
+  >
+{%- else -%}
+  <!-- Intentional Purelane Fallback Artwork (Edge Case: Product with No Image) -->
+  <div class="card-no-img {{ class }}" role="img" aria-label="{{ img_alt }}">
+    <svg viewBox="0 0 48 48" class="fallback-leaf-svg" aria-hidden="true">
+      <path d="M24 42c0-13 7-22 16-25C40 30 33 40 24 42Z" fill="var(--accent)" opacity="0.85"/>
+      <path d="M24 42C24 29 17 20 8 17 8 30 15 40 24 42Z" fill="var(--brand)" opacity="0.85"/>
+      <line x1="24" y1="43" x2="24" y2="18" stroke="var(--brand-lt)" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <span class="fallback-brand">Purelane</span>
+    <span class="fallback-text">Formula in batch</span>
+  </div>
+{%- endif -%}
