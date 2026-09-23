@@ -1,0 +1,213 @@
+{{ 'purelane.css' | asset_url | stylesheet_tag }}
+
+<section
+  class="purelane-scope purelane-bundles-section sec"
+  id="bundles"
+  data-scene="3"
+  data-section-id="{{ section.id }}"
+  aria-label="{{ section.settings.title | escape }}"
+>
+  <div class="wrap">
+    <!-- Header Box -->
+    <div class="glass sec-pad rv" style="margin-bottom:16px">
+      <div class="panel-head" style="margin-bottom:0">
+        {%- if section.settings.kicker != blank -%}
+          <span class="kicker">{{ section.settings.kicker | escape }}</span>
+        {%- endif -%}
+
+        {%- if section.settings.title != blank -%}
+          <h2 class="d2" style="margin-top:12px">{{ section.settings.title | escape }}</h2>
+        {%- endif -%}
+
+        {%- if section.settings.lede != blank -%}
+          <p class="lede" style="margin:0 auto">{{ section.settings.lede | escape }}</p>
+        {%- endif -%}
+      </div>
+    </div>
+
+    <!-- Tiers Grid -->
+    <div class="tiers">
+      {%- for block in section.blocks -%}
+        {% render 'purelane-bundle-card', block: block %}
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Purelane Bundles",
+  "tag": "section",
+  "class": "section-purelane-bundles",
+  "settings": [
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "Kicker",
+      "default": "Build your bundle"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "One box. Every room."
+    },
+    {
+      "type": "textarea",
+      "id": "lede",
+      "label": "Lede Copy",
+      "default": "Mix and match across kitchen, laundry, home and skin. One flat price, no code needed, free shipping either way."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "tier",
+      "name": "Bundle Tier",
+      "settings": [
+        {
+          "type": "product",
+          "id": "bundle_product",
+          "label": "Shopify Bundle Product",
+          "info": "Assign a Shopify product to dynamically pull live pricing, compare-at pricing, and PDP link"
+        },
+        {
+          "type": "text",
+          "id": "tag",
+          "label": "Tier Tag",
+          "default": "Starter"
+        },
+        {
+          "type": "checkbox",
+          "id": "is_best",
+          "label": "Highlight as Most Popular",
+          "default": false
+        },
+        {
+          "type": "select",
+          "id": "artwork_preset",
+          "label": "Artwork Preset",
+          "options": [
+            { "value": "starter_combo2", "label": "Starter 2-pack graphic" },
+            { "value": "popular_three", "label": "Kitchen, Tap & Dish (3 products)" },
+            { "value": "home_five", "label": "Full Home 5-pack" }
+          ],
+          "default": "starter_combo2"
+        },
+        {
+          "type": "product_list",
+          "id": "products",
+          "label": "Included Products (Shopify Native)",
+          "limit": 5
+        },
+        {
+          "type": "number",
+          "id": "qty_number",
+          "label": "Product Quantity Number",
+          "default": 2
+        },
+        {
+          "type": "text",
+          "id": "qty_unit",
+          "label": "Product Quantity Label",
+          "default": "Products"
+        },
+        {
+          "type": "text",
+          "id": "price",
+          "label": "Bundle Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product is not assigned",
+          "default": "₹349"
+        },
+        {
+          "type": "text",
+          "id": "compare_price",
+          "label": "Compare-at Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product or Products List is not assigned",
+          "default": "₹598"
+        },
+        {
+          "type": "text",
+          "id": "per_item_note",
+          "label": "Per Item Note (Fallback / Override)",
+          "info": "Leave blank to automatically calculate flat per-product cost from bundle product price and quantity"
+        },
+        {
+          "type": "textarea",
+          "id": "perks",
+          "label": "Perks (one per line)",
+          "default": "Pick any two products\nFree shipping across India"
+        },
+        {
+          "type": "text",
+          "id": "cta_label",
+          "label": "Button Label",
+          "default": "Build this box"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "Button Link (Override)",
+          "info": "Defaults to Shopify Bundle Product URL or #shop if left blank"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Purelane Bundles",
+      "settings": {
+        "kicker": "Build your bundle",
+        "title": "One box. Every room.",
+        "lede": "Mix and match across kitchen, laundry, home and skin. One flat price, no code needed, free shipping either way."
+      },
+      "blocks": [
+        {
+          "type": "tier",
+          "settings": {
+            "tag": "Starter",
+            "is_best": false,
+            "artwork_preset": "starter_combo2",
+            "qty_number": 2,
+            "qty_unit": "Products",
+            "price": "₹349",
+            "compare_price": "₹598",
+            "per_item_note": "",
+            "perks": "Pick any two products\nFree shipping across India",
+            "cta_label": "Build this box"
+          }
+        },
+        {
+          "type": "tier",
+          "settings": {
+            "tag": "Most popular",
+            "is_best": true,
+            "artwork_preset": "popular_three",
+            "qty_number": 3,
+            "qty_unit": "Products",
+            "price": "₹499",
+            "compare_price": "₹897",
+            "per_item_note": "",
+            "perks": "Pick any three products\nCovers kitchen and laundry\nFree shipping across India",
+            "cta_label": "Build this box"
+          }
+        },
+        {
+          "type": "tier",
+          "settings": {
+            "tag": "Whole home",
+            "is_best": false,
+            "artwork_preset": "home_five",
+            "qty_number": 5,
+            "qty_unit": "Products",
+            "price": "₹799",
+            "compare_price": "₹1495",
+            "per_item_note": "",
+            "perks": "Pick any five products\nEvery room in one order\nFree shipping across India",
+            "cta_label": "Build this box"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

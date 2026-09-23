@@ -1,0 +1,188 @@
+{%- comment -%}
+  Renders a Purelane Bundle Tier Card component.
+  Accepts:
+  - block: {Object} Shopify section block with bundle settings (required)
+
+  Usage:
+  {% render 'purelane-bundle-card', block: block %}
+{%- endcomment -%}
+
+{%- liquid
+  assign is_best = block.settings.is_best | default: false
+  assign best_class = ''
+  if is_best
+    assign best_class = 'best'
+  endif
+
+  assign bundle_product = block.settings.bundle_product
+  assign products_list = block.settings.products
+
+  # Resolve product count safely across Shopify and mock environments
+  assign products_count = 0
+  if products_list != blank
+    assign products_count = products_list.count | default: products_list.size | default: 0
+  endif
+
+  # Determine Quantity Count: 1. dynamic products_count, 2. merchant setting, 3. safe fallback
+  assign qty_num = block.settings.qty_number | default: 2
+  if products_count > 0
+    assign qty_num = products_count
+  endif
+
+  # Determine Selling Price: 1. bundle_product.price, 2. merchant fallback, 3. safe fallback
+  if bundle_product != blank
+    assign tier_price = bundle_product.price | money_without_trailing_zeros
+  elsif block.settings.price != blank
+    assign tier_price = block.settings.price
+  else
+    assign tier_price = '₹349'
+  endif
+
+  # Calculate regular sum of individual products if products_list is present
+  assign products_sum = 0
+  if products_count > 0
+    for p in products_list
+      assign products_sum = products_sum | plus: p.price
+    endfor
+  endif
+
+  # Determine Compare-at Price:
+  # 1. bundle_product.compare_at_price (if valid and > selling price)
+  # 2. products_sum (if products_list present and > selling price)
+  # 3. merchant fallback compare_price (only when Shopify data absent)
+  # 4. omit otherwise (do not invent compare-at price)
+  assign tier_compare_price = ''
+  if bundle_product != blank and bundle_product.compare_at_price > bundle_product.price
+    assign tier_compare_price = bundle_product.compare_at_price | money_without_trailing_zeros
+  elsif products_sum > 0 and bundle_product != blank and products_sum > bundle_product.price
+    assign tier_compare_price = products_sum | money_without_trailing_zeros
+  elsif products_sum > 0 and bundle_product == blank
+    assign tier_compare_price = products_sum | money_without_trailing_zeros
+  elsif bundle_product == blank and block.settings.compare_price != blank
+    assign tier_compare_price = block.settings.compare_price
+  endif
+
+  # Determine Per Item Note:
+  # 1. dynamic division if bundle_product exists and qty_num > 0
+  # 2. merchant fallback per_item_note
+  # 3. omit otherwise (do not invent hardcoded per-product text)
+  assign per_item_note = ''
+  if bundle_product != blank and qty_num > 0
+    assign per_item_cents = bundle_product.price | divided_by: qty_num
+    assign per_item_formatted = per_item_cents | money_without_trailing_zeros
+    assign per_item_note = 'Flat ' | append: per_item_formatted | append: ' per product'
+  elsif block.settings.per_item_note != blank
+    assign per_item_note = block.settings.per_item_note
+  endif
+
+  # CTA destination: 1. merchant cta_link override, 2. bundle_product.url, 3. fallback #shop
+  assign cta_link = block.settings.cta_link
+  if cta_link == blank
+    if bundle_product != blank
+      assign cta_link = bundle_product.url
+    else
+      assign cta_link = '#shop'
+    endif
+  endif
+
+  assign cta_label = block.settings.cta_label | default: 'Build this box'
+
+  assign is_five = false
+  if qty_num >= 5 or block.settings.artwork_preset == 'home_five'
+    assign is_five = true
+  endif
+-%}
+
+<article
+  class="glass tier rv {{ best_class }}"
+  {{ block.shopify_attributes }}
+  data-block-id="{{ block.id }}"
+>
+  {%- if block.settings.tag != blank -%}
+    <span class="tag">{{ block.settings.tag | escape }}</span>
+  {%- endif -%}
+
+  <div class="tierpix {% if is_five %}five{% endif %}" aria-hidden="true">
+    {%- if products_count > 0 -%}
+      {%- for product in products_list -%}
+        {%- assign tier_img_url = product.featured_image | image_url: width: 120 -%}
+        {%- if product.featured_image != blank and tier_img_url != blank -%}
+          <img
+            class="tier-img"
+            src="{{ tier_img_url }}"
+            alt="{{ product.featured_image.alt | default: product.title | escape }}"
+            loading="lazy"
+            width="60"
+            height="62"
+          >
+        {%- else -%}
+          <span class="pimg p-tap" role="img" aria-label="{{ product.title | escape }}"></span>
+        {%- endif -%}
+      {%- endfor -%}
+    {%- else -%}
+      {%- case block.settings.artwork_preset -%}
+        {%- when 'popular_three' -%}
+          <span class="pimg p-kitchen" role="img" aria-label="Purelane foaming kitchen cleaner"></span>
+          <span class="pimg p-tap" role="img" aria-label="Purelane tap cleaner and limescale remover"></span>
+          <span class="pimg p-dish" role="img" aria-label="Purelane organic dishwash liquid gel"></span>
+
+        {%- when 'home_five' -%}
+          <span class="pimg p-kitchen" role="img" aria-label="Purelane foaming kitchen cleaner"></span>
+          <span class="pimg p-tap" role="img" aria-label="Purelane tap cleaner and limescale remover"></span>
+          <span class="pimg p-floor" role="img" aria-label="Purelane natural herbal floor cleaner"></span>
+          <span class="pimg p-toilet" role="img" aria-label="Purelane non-toxic toilet cleaner"></span>
+          <span class="pimg p-laundry" role="img" aria-label="Purelane non-toxic laundry detergent"></span>
+
+        {%- else -%}
+          <!-- Default Starter: 2 pack combo bottle graphic -->
+          <span class="pimg p-combo2" role="img" aria-label="Purelane tap cleaner and kitchen cleaner combo pack"></span>
+      {%- endcase -%}
+    {%- endif -%}
+  </div>
+
+  <div class="qty">
+    {{ qty_num }}
+    <small>{{ block.settings.qty_unit | default: 'Products' | escape }}</small>
+  </div>
+
+  <div class="price">
+    {{ tier_price | escape }}
+    {%- if tier_compare_price != blank -%}
+      <s>{{ tier_compare_price | escape }}</s>
+    {%- endif -%}
+  </div>
+
+  {%- if per_item_note != blank -%}
+    <p class="body-s per-item" style="font-size:12px">{{ per_item_note | escape }}</p>
+  {%- endif -%}
+
+  {%- if block.settings.perks != blank -%}
+    {%- assign perks_lines = block.settings.perks | newline_to_br | split: '<br />' -%}
+    <ul>
+      {%- for perk in perks_lines -%}
+        {%- assign p = perk | strip -%}
+        {%- if p != blank -%}
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m5 13 4 4L19 7"/>
+            </svg>
+            {{ p | escape }}
+          </li>
+        {%- endif -%}
+      {%- endfor -%}
+    </ul>
+  {%- endif -%}
+
+  <a
+    class="btn {% if is_best %}btn-primary{% else %}btn-ghost{% endif %}"
+    href="{{ cta_link }}"
+    aria-label="{{ cta_label | escape }}: {{ block.settings.tag | escape }}"
+  >
+    {{ cta_label | escape }}
+    {%- if is_best -%}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h13m-5-6 6 6-6 6"/>
+      </svg>
+    {%- endif -%}
+  </a>
+</article>

@@ -1,0 +1,343 @@
+{{ 'purelane.css' | asset_url | stylesheet_tag }}
+
+<section
+  class="purelane-scope purelane-combos-section sec"
+  id="combos"
+  data-scene="3"
+  data-section-id="{{ section.id }}"
+  aria-label="{{ section.settings.title | escape }}"
+>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="panel-head rv">
+      {%- if section.settings.kicker != blank -%}
+        <span class="kicker">{{ section.settings.kicker | escape }}</span>
+      {%- endif -%}
+
+      {%- if section.settings.title != blank -%}
+        <h2 class="d2" style="margin-top:12px">{{ section.settings.title | escape }}</h2>
+      {%- endif -%}
+
+      <div class="rule" aria-hidden="true">
+        <i></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21c0-6.5 3.5-11 8-12.5C20 15 16.5 20 12 21Z"/>
+          <path d="M12 21C12 14.5 8.5 10 4 8.5 4 15 7.5 20 12 21Z"/>
+        </svg>
+        <i></i>
+      </div>
+
+      {%- if section.settings.lede != blank -%}
+        <p class="lede" style="margin:14px auto 0">{{ section.settings.lede | escape }}</p>
+      {%- endif -%}
+    </div>
+
+    <!-- Combo Horizontal Scroll Rail -->
+    <div
+      class="comborail rv"
+      tabindex="0"
+      role="region"
+      aria-label="{{ section.settings.title | escape }} rail"
+    >
+      {%- for block in section.blocks -%}
+        {% render 'purelane-combo-card', block: block %}
+      {%- endfor -%}
+    </div>
+
+    {%- if section.settings.show_swipecue -%}
+      <div class="swipecue" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h13m-5-6 6 6-6 6"/>
+        </svg>
+        {{ section.settings.swipecue_text | default: 'Swipe for more combos' | escape }}
+      </div>
+    {%- endif -%}
+
+    {%- if section.settings.footnote != blank -%}
+      <p class="railnote">{{ section.settings.footnote | escape }}</p>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Purelane Combos",
+  "tag": "section",
+  "class": "section-purelane-combos",
+  "settings": [
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "Kicker",
+      "default": "Pre-built to save you money"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Best selling combos"
+    },
+    {
+      "type": "textarea",
+      "id": "lede",
+      "label": "Lede Copy",
+      "default": "Swipe through the boxes people order most. Each one is already priced below buying the same products on their own."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_swipecue",
+      "label": "Show swipe cue indicator",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "swipecue_text",
+      "label": "Swipe cue text",
+      "default": "Swipe for more combos"
+    },
+    {
+      "type": "text",
+      "id": "footnote",
+      "label": "Footnote",
+      "default": "Tapping 'Shop bundle' opens the bundle picker with these products already added. You can still swap anything before you pay."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "combo",
+      "name": "Combo Card",
+      "settings": [
+        {
+          "type": "product",
+          "id": "bundle_product",
+          "label": "Shopify Bundle Product",
+          "info": "Assign a Shopify product to dynamically pull live pricing, compare-at pricing, and PDP link"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Combo Title",
+          "default": "Kitchen essentials"
+        },
+        {
+          "type": "checkbox",
+          "id": "is_hero",
+          "label": "Highlight as Hero/Best Value Combo",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "savings_badge",
+          "label": "Top Marketing Badge",
+          "info": "e.g. Biggest saving. Leave blank to derive automatically from calculated savings"
+        },
+        {
+          "type": "text",
+          "id": "flag_badge",
+          "label": "Corner Flag Tag",
+          "info": "e.g. Most popular, Best value"
+        },
+        {
+          "type": "product_list",
+          "id": "products",
+          "label": "Included Products (Shopify Native)",
+          "limit": 5
+        },
+        {
+          "type": "select",
+          "id": "fallback_artwork",
+          "label": "Fallback Artwork Preset",
+          "info": "Used when products do not have images assigned",
+          "options": [
+            { "value": "kitchen_dish_tap", "label": "Kitchen, Dish & Tap" },
+            { "value": "laundry_care", "label": "Laundry Detergent, Softener & Machine Cleaner" },
+            { "value": "complete_home", "label": "Kitchen, Floor & Handwash" },
+            { "value": "bathroom_deep", "label": "Toilet, Tap & Magic Eraser" },
+            { "value": "hard_water", "label": "Tap & Toilet" }
+          ],
+          "default": "kitchen_dish_tap"
+        },
+        {
+          "type": "text",
+          "id": "item_1_benefit",
+          "label": "Item 1 Micro-benefit",
+          "default": "Cuts grease instantly"
+        },
+        {
+          "type": "text",
+          "id": "item_2_benefit",
+          "label": "Item 2 Micro-benefit",
+          "default": "Squeaky clean dishes"
+        },
+        {
+          "type": "text",
+          "id": "item_3_benefit",
+          "label": "Item 3 Micro-benefit",
+          "default": "Melts hard water stains"
+        },
+        {
+          "type": "text",
+          "id": "product_count_label",
+          "label": "Product Count Subtitle",
+          "default": "3 products"
+        },
+        {
+          "type": "textarea",
+          "id": "included_description",
+          "label": "Includes Description",
+          "default": "Includes: Foaming Kitchen Cleaner, Dishwash Gel & Tap Cleaner. Everything for a sparkling kitchen, no need to pick separately."
+        },
+        {
+          "type": "text",
+          "id": "price",
+          "label": "Combo Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product is not assigned",
+          "default": "₹499"
+        },
+        {
+          "type": "text",
+          "id": "compare_price",
+          "label": "Compare Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product or Products List is not assigned",
+          "default": "₹897"
+        },
+        {
+          "type": "text",
+          "id": "savings_tag",
+          "label": "Savings Tag Text (Fallback / Override)",
+          "info": "Leave blank to automatically calculate savings from live prices"
+        },
+        {
+          "type": "text",
+          "id": "tax_note",
+          "label": "Tax/COD Note",
+          "default": "Inclusive of all taxes · COD available"
+        },
+        {
+          "type": "text",
+          "id": "cta_label",
+          "label": "CTA Button Label",
+          "default": "Shop bundle"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "CTA Button Link (Override)",
+          "info": "Defaults to Shopify Bundle Product URL if left blank"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Purelane Combos",
+      "settings": {
+        "kicker": "Pre-built to save you money",
+        "title": "Best selling combos",
+        "lede": "Swipe through the boxes people order most. Each one is already priced below buying the same products on their own.",
+        "show_swipecue": true,
+        "swipecue_text": "Swipe for more combos",
+        "footnote": "Tapping 'Shop bundle' opens the bundle picker with these products already added. You can still swap anything before you pay."
+      },
+      "blocks": [
+        {
+          "type": "combo",
+          "settings": {
+            "title": "Kitchen essentials",
+            "is_hero": false,
+            "savings_badge": "",
+            "flag_badge": "Most popular",
+            "fallback_artwork": "kitchen_dish_tap",
+            "item_1_benefit": "Cuts grease instantly",
+            "item_2_benefit": "Squeaky clean dishes",
+            "item_3_benefit": "Melts hard water stains",
+            "product_count_label": "3 products",
+            "included_description": "Includes: Foaming Kitchen Cleaner, Dishwash Gel & Tap Cleaner. Everything for a sparkling kitchen, no need to pick separately.",
+            "price": "₹499",
+            "compare_price": "₹897",
+            "savings_tag": "",
+            "tax_note": "Inclusive of all taxes · COD available",
+            "cta_label": "Shop bundle"
+          }
+        },
+        {
+          "type": "combo",
+          "settings": {
+            "title": "Laundry care bundle",
+            "is_hero": false,
+            "savings_badge": "",
+            "fallback_artwork": "laundry_care",
+            "item_1_benefit": "Removes tough stains & odour",
+            "item_2_benefit": "Softens & freshens every wash",
+            "item_3_benefit": "Deep-cleans your machine",
+            "product_count_label": "3 products",
+            "included_description": "Includes: Laundry Detergent, Fabric Conditioner & Machine Cleaner Powder. Softer, fresher wash, all in one box.",
+            "price": "₹499",
+            "compare_price": "₹947",
+            "savings_tag": "",
+            "tax_note": "Inclusive of all taxes · COD available",
+            "cta_label": "Shop bundle"
+          }
+        },
+        {
+          "type": "combo",
+          "settings": {
+            "title": "Complete home bundle",
+            "is_hero": true,
+            "savings_badge": "Biggest saving",
+            "flag_badge": "Best value",
+            "fallback_artwork": "complete_home",
+            "item_1_benefit": "Cuts grease instantly",
+            "item_2_benefit": "Kills 99.9% germs",
+            "item_3_benefit": "Gentle hydration for hands",
+            "product_count_label": "5 products",
+            "included_description": "Includes: Kitchen Cleaner, Laundry Detergent, Floor Cleaner, Toilet Cleaner & Handwash. Our biggest saving box.",
+            "price": "₹799",
+            "compare_price": "₹1,495",
+            "savings_tag": "",
+            "tax_note": "Inclusive of all taxes · COD available",
+            "cta_label": "Shop bundle"
+          }
+        },
+        {
+          "type": "combo",
+          "settings": {
+            "title": "Bathroom deep clean",
+            "is_hero": false,
+            "savings_badge": "",
+            "fallback_artwork": "bathroom_deep",
+            "item_1_benefit": "Kills 99.9% germs",
+            "item_2_benefit": "Melts hard water stains",
+            "item_3_benefit": "Scrubs away soap scum",
+            "product_count_label": "3 products",
+            "included_description": "Includes: Toilet Cleaner, Tap Cleaner & Magic Eraser. A complete bathroom refresh in one box.",
+            "price": "₹499",
+            "compare_price": "₹897",
+            "savings_tag": "",
+            "tax_note": "Inclusive of all taxes · COD available",
+            "cta_label": "Shop bundle"
+          }
+        },
+        {
+          "type": "combo",
+          "settings": {
+            "title": "Hard water solution kit",
+            "is_hero": false,
+            "savings_badge": "",
+            "fallback_artwork": "hard_water",
+            "item_1_benefit": "Melts hard water stains",
+            "item_2_benefit": "Fights limescale in the bowl",
+            "product_count_label": "2 products",
+            "included_description": "Includes: Tap Cleaner & Toilet Cleaner. A quick, focused fix for hard water stains across the home.",
+            "price": "₹349",
+            "compare_price": "₹598",
+            "savings_tag": "",
+            "tax_note": "Inclusive of all taxes · COD available",
+            "cta_label": "Shop bundle"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

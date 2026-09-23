@@ -1,0 +1,57 @@
+{%- comment -%}
+  Renders a Purelane Customer Review Card.
+  Accepts:
+  - block: {Object} Shopify section block with review settings (required)
+  - is_duplicate: {Boolean} Whether this card is a cloned element for infinite CSS marquee looping (optional)
+
+  Usage:
+  {% render 'purelane-review-card', block: block %}
+  {% render 'purelane-review-card', block: block, is_duplicate: true %}
+{%- endcomment -%}
+
+{%- liquid
+  assign stars = block.settings.stars | default: '★★★★★'
+  assign headline = block.settings.headline
+  assign quote = block.settings.quote
+  assign author = block.settings.author
+  assign product_name = block.settings.product_name
+  assign is_dup = is_duplicate | default: false
+-%}
+
+<article
+  class="glass-2 rcard"
+  {{ block.shopify_attributes }}
+  data-block-id="{{ block.id }}"
+  {% if is_dup %}
+    aria-hidden="true"
+    tabindex="-1"
+  {% else %}
+    tabindex="0"
+  {% endif %}
+>
+  {%- if stars != blank -%}
+    <div class="st" aria-label="Rating: {{ stars | escape }}">{{ stars | escape }}</div>
+  {%- endif -%}
+
+  {%- if headline != blank -%}
+    <h5>{{ headline | escape }}</h5>
+  {%- endif -%}
+
+  {%- if quote != blank -%}
+    <p>{{ quote | escape }}</p>
+  {%- endif -%}
+
+  {%- if author != blank or product_name != blank -%}
+    <div class="who">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m5 13 4 4L19 7"/>
+      </svg>
+      {%- if author != blank -%}
+        <b>{{ author | escape }}</b>
+      {%- endif -%}
+      {%- if product_name != blank -%}
+        <span>&middot; {{ product_name | escape }}</span>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</article>

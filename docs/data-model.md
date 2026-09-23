@@ -9,11 +9,16 @@ This document outlines the data strategy for translating the Purelane prototype 
 1. **Native Shopify Data First**:
    - Product titles, handles, descriptions, pricing, compare-at pricing, featured images, and URLs are sourced directly from Shopify's native `Product` object.
    - Live availability (`product.available`) determines active CTA states.
-   - Prices use Shopify's localized currency formatting filter (`{{ product.price | money }}`).
-2. **Merchant Editability via Section Settings & Blocks**:
+   - Prices use Shopify's localized currency formatting filter (`{{ product.price | money_without_trailing_zeros }}`).
+2. **Combo & Bundle Pricing Architecture**:
+   - **Dedicated Bundle Product Assignment**: Both Combos (`purelane-combos.liquid`) and Bundles (`purelane-bundles.liquid`) support linking a real Shopify Product via `bundle_product` (type: `product`). When linked, the live selling price (`bundle_product.price | money_without_trailing_zeros`), compare-at price (`bundle_product.compare_at_price`), inventory availability, and PDP URL are automatically inherited from the Shopify catalog.
+   - **Composite Item Pricing & Savings**: When individual combo or bundle products are specified via `products` (`product_list`), the regular retail sum is computed in Liquid (`sum = sum + p.price`). If the bundle product's compare-at price is lower or absent, the regular retail sum is dynamically used as the comparison benchmark.
+   - **Automatic Savings & Per-Item Rates**: Savings amounts are dynamically calculated (`compare_at_price - price`) and rendered in real-time (`Save {{ savings | money_without_trailing_zeros }}`). In bundle tiers, flat per-item rates are dynamically computed (`bundle_product.price | divided_by: qty_number | money_without_trailing_zeros`).
+   - **Graceful Unseeded Store Fallbacks**: For initial store themes or unassigned blocks, section settings (`price`, `compare_price`, `savings_tag`, `per_item_note`) provide complete merchant override capability, guaranteeing pixel-perfect layout preservation without broken currency tags or missing text.
+3. **Merchant Editability via Section Settings & Blocks**:
    - Marketing headlines, badge text, promotional discount overrides, and call-to-action destinations are exposed to merchants inside the Shopify Theme Editor.
-3. **Avoid Unnecessary Overhead**:
-   - Metafields and Metaobjects are evaluated carefully. Where native Shopify features or Section Blocks provide complete flexibility without requiring custom API definitions or private app scopes, section blocks are prioritized for homepage configuration.
+4. **Avoid Unnecessary Overhead**:
+   - Metafields and Metaobjects are evaluated carefully. Where native Shopify features or Section Blocks provide complete flexibility without requiring custom API definitions or private app scopes, section blocks with native Shopify product bindings are prioritized for homepage configuration.
 
 ---
 
@@ -245,6 +250,12 @@ This document outlines the data strategy for translating the Purelane prototype 
       "name": "Combo Card",
       "settings": [
         {
+          "type": "product",
+          "id": "bundle_product",
+          "label": "Shopify Bundle Product",
+          "info": "Assign a Shopify product to dynamically pull live pricing, compare-at pricing, and PDP link"
+        },
+        {
           "type": "text",
           "id": "title",
           "label": "Combo Name",
@@ -270,7 +281,7 @@ This document outlines the data strategy for translating the Purelane prototype 
         {
           "type": "product_list",
           "id": "products",
-          "label": "Included Products",
+          "label": "Included Products (Shopify Native)",
           "limit": 5
         },
         {
@@ -288,19 +299,22 @@ This document outlines the data strategy for translating the Purelane prototype 
         {
           "type": "text",
           "id": "price",
-          "label": "Combo Price",
+          "label": "Combo Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product is not assigned",
           "default": "₹499"
         },
         {
           "type": "text",
           "id": "compare_price",
-          "label": "Compare Price",
+          "label": "Compare Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product or Products List is not assigned",
           "default": "₹897"
         },
         {
           "type": "text",
           "id": "savings_tag",
-          "label": "Savings Tag Text",
+          "label": "Savings Tag Text (Fallback / Override)",
+          "info": "Leave blank to automatically calculate savings from live prices",
           "default": "Save ₹398"
         },
         {
@@ -310,9 +324,16 @@ This document outlines the data strategy for translating the Purelane prototype 
           "default": "Inclusive of all taxes · COD available"
         },
         {
+          "type": "text",
+          "id": "cta_label",
+          "label": "CTA Button Label",
+          "default": "Shop bundle"
+        },
+        {
           "type": "url",
-          "id": "bundle_link",
-          "label": "Bundle Link"
+          "id": "cta_url",
+          "label": "CTA Button Link (Override)",
+          "info": "Defaults to Shopify Bundle Product URL if left blank"
         }
       ]
     }
@@ -354,6 +375,12 @@ This document outlines the data strategy for translating the Purelane prototype 
       "limit": 3,
       "settings": [
         {
+          "type": "product",
+          "id": "bundle_product",
+          "label": "Shopify Bundle Product",
+          "info": "Assign a Shopify product to dynamically pull live pricing, compare-at pricing, and PDP link"
+        },
+        {
           "type": "text",
           "id": "tag",
           "label": "Tier Tag",
@@ -364,6 +391,12 @@ This document outlines the data strategy for translating the Purelane prototype 
           "id": "is_best",
           "label": "Highlight as Most Popular",
           "default": false
+        },
+        {
+          "type": "product_list",
+          "id": "products",
+          "label": "Included Products (Shopify Native)",
+          "limit": 5
         },
         {
           "type": "number",
@@ -380,19 +413,22 @@ This document outlines the data strategy for translating the Purelane prototype 
         {
           "type": "text",
           "id": "price",
-          "label": "Bundle Price",
+          "label": "Bundle Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product is not assigned",
           "default": "₹349"
         },
         {
           "type": "text",
           "id": "compare_price",
-          "label": "Compare Price",
+          "label": "Compare-at Price (Fallback / Override)",
+          "info": "Used if Shopify Bundle Product or Products List is not assigned",
           "default": "₹598"
         },
         {
           "type": "text",
           "id": "per_item_note",
-          "label": "Per Item Note",
+          "label": "Per Item Note (Fallback / Override)",
+          "info": "Leave blank to automatically calculate flat per-product cost",
           "default": "Flat ₹174 per product"
         },
         {
@@ -410,7 +446,8 @@ This document outlines the data strategy for translating the Purelane prototype 
         {
           "type": "url",
           "id": "cta_link",
-          "label": "Button Link"
+          "label": "Button Link (Override)",
+          "info": "Defaults to Shopify Bundle Product URL or #shop if left blank"
         }
       ]
     }

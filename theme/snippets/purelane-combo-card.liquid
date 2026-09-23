@@ -1,0 +1,286 @@
+{%- comment -%}
+  Renders a Purelane Combo Card component.
+  Accepts:
+  - block: {Object} Shopify section block with combo settings (required)
+
+  Usage:
+  {% render 'purelane-combo-card', block: block %}
+{%- endcomment -%}
+
+{%- liquid
+  assign is_hero = block.settings.is_hero | default: false
+  assign hero_class = ''
+  if is_hero
+    assign hero_class = 'hero-combo'
+  endif
+
+  assign bundle_product = block.settings.bundle_product
+  assign products_list = block.settings.products
+
+  # Determine Title: 1. merchant title, 2. bundle_product.title, 3. safe fallback
+  assign combo_title = block.settings.title
+  if combo_title == blank and bundle_product != blank
+    assign combo_title = bundle_product.title
+  elsif combo_title == blank
+    assign combo_title = 'Kitchen essentials'
+  endif
+
+  # Determine Included Description: 1. merchant description, 2. bundle_product.description, 3. blank
+  assign combo_desc = block.settings.included_description
+  if combo_desc == blank and bundle_product != blank and bundle_product.description != blank
+    assign combo_desc = bundle_product.description | strip_html | truncate: 160
+  endif
+
+  # Determine Selling Price: 1. bundle_product.price, 2. merchant fallback price, 3. safe preview fallback
+  if bundle_product != blank
+    assign combo_price = bundle_product.price | money_without_trailing_zeros
+  elsif block.settings.price != blank
+    assign combo_price = block.settings.price
+  else
+    assign combo_price = '₹499'
+  endif
+
+  # Resolve product count safely across Shopify and mock environments
+  assign products_count = 0
+  if products_list != blank
+    assign products_count = products_list.count | default: products_list.size | default: 0
+  endif
+
+  # Calculate regular sum of individual products if products_list is present
+  assign products_sum = 0
+  if products_count > 0
+    for p in products_list
+      assign products_sum = products_sum | plus: p.price
+    endfor
+  endif
+
+  # Determine Compare-at Price:
+  # 1. bundle_product.compare_at_price (if valid and > selling price)
+  # 2. products_sum (if products_list present and sum > selling price)
+  # 3. merchant fallback compare_price (only when Shopify data absent)
+  # 4. omit otherwise (do not invent compare-at price)
+  assign combo_compare_price = ''
+  if bundle_product != blank and bundle_product.compare_at_price > bundle_product.price
+    assign combo_compare_price = bundle_product.compare_at_price | money_without_trailing_zeros
+  elsif products_sum > 0 and bundle_product != blank and products_sum > bundle_product.price
+    assign combo_compare_price = products_sum | money_without_trailing_zeros
+  elsif products_sum > 0 and bundle_product == blank
+    assign combo_compare_price = products_sum | money_without_trailing_zeros
+  elsif bundle_product == blank and block.settings.compare_price != blank
+    assign combo_compare_price = block.settings.compare_price
+  endif
+
+  # Determine Dynamic Savings Tag:
+  # Priority:
+  # 1. IF bundle_product has valid compare_at_price > price: compare_at_price - price
+  # 2. ELSE IF products_list exists AND products_sum > bundle_product.price: products_sum - bundle_product.price
+  # 3. ELSE: merchant fallback savings_tag (only when live data cannot calculate)
+  # 4. ELSE: do not invent savings
+  assign savings_tag = ''
+  if bundle_product != blank and bundle_product.compare_at_price > bundle_product.price
+    assign savings_num = bundle_product.compare_at_price | minus: bundle_product.price | money_without_trailing_zeros
+    assign savings_tag = 'Save ' | append: savings_num
+  elsif products_sum > 0 and bundle_product != blank and products_sum > bundle_product.price
+    assign savings_num = products_sum | minus: bundle_product.price | money_without_trailing_zeros
+    assign savings_tag = 'Save ' | append: savings_num
+  elsif bundle_product == blank and block.settings.savings_tag != blank
+    assign savings_tag = block.settings.savings_tag
+  endif
+
+  # Top savings badge: explicit merchant setting or dynamic 'You save ₹...'
+  assign savings_badge = block.settings.savings_badge
+  if savings_badge == blank and savings_tag != blank
+    assign savings_badge = 'You ' | append: savings_tag | downcase
+  endif
+
+  # Product count label: 1. dynamic from products_count, 2. merchant fallback, 3. blank
+  assign count_label = ''
+  if products_count > 0
+    if products_count == 1
+      assign count_label = '1 product'
+    else
+      assign count_label = products_count | append: ' products'
+    endif
+  elsif block.settings.product_count_label != blank
+    assign count_label = block.settings.product_count_label
+  endif
+
+  # CTA destination: 1. merchant cta_url override, 2. bundle_product.url, 3. fallback #bundles
+  assign cta_url = block.settings.cta_url
+  if cta_url == blank
+    if bundle_product != blank
+      assign cta_url = bundle_product.url
+    else
+      assign cta_url = '#bundles'
+    endif
+  endif
+
+  assign cta_label = block.settings.cta_label | default: 'Shop bundle'
+-%}
+
+<article
+  class="glass combo {{ hero_class }}"
+  {{ block.shopify_attributes }}
+  data-block-id="{{ block.id }}"
+>
+  <div class="tray">
+    {%- if savings_badge != blank -%}
+      <span class="save">{{ savings_badge | escape }}</span>
+    {%- endif -%}
+
+    {%- if block.settings.flag_badge != blank -%}
+      <span class="flag">{{ block.settings.flag_badge | escape }}</span>
+    {%- endif -%}
+
+    <div class="stack">
+      {%- if products_count > 0 -%}
+        {%- for product in products_list -%}
+          {%- unless forloop.first -%}
+            <span class="plus" aria-hidden="true">+</span>
+          {%- endunless -%}
+          <span class="it">
+            {%- assign img_url = product.featured_image | image_url: width: 140 -%}
+            {%- if product.featured_image != blank and img_url != blank -%}
+              <img
+                class="stack-img"
+                src="{{ img_url }}"
+                alt="{{ product.featured_image.alt | default: product.title | escape }}"
+                loading="lazy"
+                width="70"
+                height="66"
+              >
+            {%- else -%}
+              <span class="tile" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 21c0-6.5 3.5-11 8-12.5C20 15 16.5 20 12 21Z"/>
+                  <path d="M12 21C12 14.5 8.5 10 4 8.5 4 15 7.5 20 12 21Z"/>
+                </svg>
+              </span>
+            {%- endif -%}
+            <span>{{ product.title | truncate: 26 | escape }}</span>
+          </span>
+        {%- endfor -%}
+      {%- else -%}
+        {%- case block.settings.fallback_artwork -%}
+          {%- when 'laundry_care' -%}
+            <span class="it">
+              <span class="pimg p-laundry" role="img" aria-label="Purelane non-toxic laundry detergent"></span>
+              <span>{{ block.settings.item_1_benefit | default: 'Removes tough stains & odour' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="tile" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 21c0-6.5 3.5-11 8-12.5C20 15 16.5 20 12 21Z"/>
+                  <path d="M12 21C12 14.5 8.5 10 4 8.5 4 15 7.5 20 12 21Z"/>
+                </svg>
+              </span>
+              <span>{{ block.settings.item_2_benefit | default: 'Softens & freshens every wash' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-wm" role="img" aria-label="Purelane washing machine cleaner and descaler tablets"></span>
+              <span>{{ block.settings.item_3_benefit | default: 'Deep-cleans your machine' | escape }}</span>
+            </span>
+
+          {%- when 'complete_home' -%}
+            <span class="it">
+              <span class="pimg p-kitchen" role="img" aria-label="Purelane foaming kitchen cleaner"></span>
+              <span>{{ block.settings.item_1_benefit | default: 'Cuts grease instantly' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-floor" role="img" aria-label="Purelane natural herbal floor cleaner"></span>
+              <span>{{ block.settings.item_2_benefit | default: 'Kills 99.9% germs' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-handwash" role="img" aria-label="Purelane gentle hydrating liquid handwash"></span>
+              <span>{{ block.settings.item_3_benefit | default: 'Gentle hydration for hands' | escape }}</span>
+            </span>
+
+          {%- when 'bathroom_deep' -%}
+            <span class="it">
+              <span class="pimg p-toilet" role="img" aria-label="Purelane non-toxic toilet cleaner"></span>
+              <span>{{ block.settings.item_1_benefit | default: 'Kills 99.9% germs' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-tap" role="img" aria-label="Purelane tap cleaner and limescale remover"></span>
+              <span>{{ block.settings.item_2_benefit | default: 'Melts hard water stains' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-eraser" role="img" aria-label="Purelane magic eraser"></span>
+              <span>{{ block.settings.item_3_benefit | default: 'Scrubs away soap scum' | escape }}</span>
+            </span>
+
+          {%- when 'hard_water' -%}
+            <span class="it">
+              <span class="pimg p-tap" role="img" aria-label="Purelane tap cleaner and limescale remover"></span>
+              <span>{{ block.settings.item_1_benefit | default: 'Melts hard water stains' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-toilet" role="img" aria-label="Purelane non-toxic toilet cleaner"></span>
+              <span>{{ block.settings.item_2_benefit | default: 'Fights limescale in the bowl' | escape }}</span>
+            </span>
+
+          {%- else -%}
+            <!-- Default: Kitchen essentials -->
+            <span class="it">
+              <span class="pimg p-kitchen" role="img" aria-label="Purelane foaming kitchen cleaner"></span>
+              <span>{{ block.settings.item_1_benefit | default: 'Cuts grease instantly' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-dish" role="img" aria-label="Purelane organic dishwash liquid gel"></span>
+              <span>{{ block.settings.item_2_benefit | default: 'Squeaky clean dishes' | escape }}</span>
+            </span>
+            <span class="plus" aria-hidden="true">+</span>
+            <span class="it">
+              <span class="pimg p-tap" role="img" aria-label="Purelane tap cleaner and limescale remover"></span>
+              <span>{{ block.settings.item_3_benefit | default: 'Melts hard water stains' | escape }}</span>
+            </span>
+        {%- endcase -%}
+      {%- endif -%}
+    </div>
+  </div>
+
+  <div class="body">
+    <h3>{{ combo_title | escape }}</h3>
+
+    {%- if count_label != blank -%}
+      <div class="cnt">{{ count_label | escape }}</div>
+    {%- endif -%}
+
+    {%- if combo_desc != blank -%}
+      <p class="inc">{{ combo_desc | escape }}</p>
+    {%- endif -%}
+
+    <div class="prow">
+      <strong>{{ combo_price | escape }}</strong>
+      {%- if combo_compare_price != blank -%}
+        <s>{{ combo_compare_price | escape }}</s>
+      {%- endif -%}
+      {%- if savings_tag != blank -%}
+        <em>{{ savings_tag | escape }}</em>
+      {%- endif -%}
+    </div>
+
+    {%- if block.settings.tax_note != blank -%}
+      <div class="fine">{{ block.settings.tax_note | escape }}</div>
+    {%- endif -%}
+
+    <a
+      class="btn {% if is_hero %}btn-primary{% else %}btn-ghost{% endif %}"
+      href="{{ cta_url }}"
+      aria-label="{{ cta_label | escape }}: {{ block.settings.title | escape }}"
+    >
+      {{ cta_label | escape }}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h13m-5-6 6 6-6 6"/>
+      </svg>
+    </a>
+  </div>
+</article>
