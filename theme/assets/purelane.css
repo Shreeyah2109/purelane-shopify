@@ -2113,7 +2113,14 @@ purelane-hero-stage {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: #eee7fb;
+  /* background: #eee7fb; */
+   background: linear-gradient(
+    178deg,
+    #fbfffb 0%,
+    #eafaec 24%,
+    #d6f1dc 54%,
+    #bfe8ca 100%
+  );
 }
 
 .scene {
