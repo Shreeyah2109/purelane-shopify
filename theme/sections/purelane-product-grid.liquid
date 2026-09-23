@@ -1,0 +1,135 @@
+{{ 'purelane.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign target_collection = section.settings.collection
+  if target_collection != blank and target_collection.products_count > 0
+    assign products = target_collection.products
+  elsif collections['all'] != blank and collections['all'].products_count > 0
+    assign products = collections['all'].products
+  else
+    assign products = collections.all.products
+  endif
+-%}
+
+<section
+  class="purelane-scope purelane-product-grid-section sec"
+  id="shop"
+  data-section-id="{{ section.id }}"
+  aria-label="{{ section.settings.title | escape }}"
+>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="panel-head rv">
+      {%- if section.settings.kicker != blank -%}
+        <span class="kicker">{{ section.settings.kicker | escape }}</span>
+      {%- endif -%}
+
+      {%- if section.settings.title != blank -%}
+        <h2 class="d2" style="margin-top:12px">{{ section.settings.title | escape }}</h2>
+      {%- endif -%}
+
+      <div class="rule" aria-hidden="true">
+        <i></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21c0-6.5 3.5-11 8-12.5C20 15 16.5 20 12 21Z"/>
+          <path d="M12 21C12 14.5 8.5 10 4 8.5 4 15 7.5 20 12 21Z"/>
+        </svg>
+        <i></i>
+      </div>
+    </div>
+
+    <!-- Product Shelf Grid -->
+    <div
+      class="shelf"
+      style="--grid-desktop: {{ section.settings.columns_desktop | default: 4 }}; --grid-mobile: {{ section.settings.columns_mobile | default: 2 }};"
+    >
+      {%- if products != blank and products.size > 0 -%}
+        {%- for product in products limit: section.settings.products_to_show -%}
+          {% render 'purelane-product-card',
+            product: product,
+            forloop: forloop,
+            show_badge: section.settings.show_badges
+          %}
+        {%- endfor -%}
+      {%- else -%}
+        <div class="shelf-empty-state">
+          <p>No products available in this collection yet.</p>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Purelane Product Grid",
+  "tag": "section",
+  "class": "section-purelane-product-grid",
+  "settings": [
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "Kicker",
+      "default": "Bestsellers"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Loved by 30,000 homes"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "min": 4,
+      "max": 16,
+      "step": 2,
+      "default": 8,
+      "label": "Products to show"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "default": 4,
+      "label": "Desktop columns"
+    },
+    {
+      "type": "select",
+      "id": "columns_mobile",
+      "label": "Mobile columns",
+      "options": [
+        { "value": "1", "label": "1 column" },
+        { "value": "2", "label": "2 columns" }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_badges",
+      "label": "Show product badges",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Purelane Product Grid",
+      "settings": {
+        "kicker": "Bestsellers",
+        "title": "Loved by 30,000 homes",
+        "products_to_show": 8,
+        "columns_desktop": 4,
+        "columns_mobile": "2",
+        "show_badges": true
+      }
+    }
+  ]
+}
+{% endschema %}
